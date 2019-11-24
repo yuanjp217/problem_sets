@@ -76,7 +76,22 @@ What's the proportion of "significant" results ($p < .05$) that you see?
 First do this using a `for` loop.
 
 ```{r}
-mean(rnorm(30))
+n = 10000
+for (var in 1:n) {
+  #print(var)
+  if (var == 1) 
+    {first <- t.test((rnorm(30)))
+    pvals_for <- first$p.value}
+  else
+    {output <- t.test((rnorm(30)))
+    pvals_for <- as.data.frame(append(list,output$p.value))}
+}
+
+sig_for <- pvals_for %>%
+  filter(pvals_for < 0.05)
+
+count(sig_for)/n
+
 ```
 
 Next, do this using the `replicate` function:
