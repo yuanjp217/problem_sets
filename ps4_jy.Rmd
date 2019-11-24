@@ -18,9 +18,10 @@ This part is a warmup, it should be relatively straightforward `ggplot2` practic
 Load data from Frank, Vul, Saxe (2011, Infancy), a study in which we measured infants' looking to hands in moving scenes. There were infants from 3 months all the way to about two years, and there were two movie conditions (`Faces_Medium`, in which kids played on a white background, and `Faces_Plus`, in which the backgrounds were more complex and the people in the videos were both kids and adults). An eye-tracker measured children's attention to faces. This version of the dataset only gives two conditions and only shows the amount of looking at hands (other variables were measured as well). 
 
 ```{r}
-fvs <- read_csv("data/FVS2011-hands.csv")
+fvs <- read.csv("data/FVS2011-hands.csv")
 library(tidyverse)
 library(hrbrthemes)
+library(ggthemes)
 ```
 
 First, use `ggplot` to plot a histogram of the ages of children in the study. NOTE: this is a repeated measures design, so you can't just take a histogram of every measurement. 
