@@ -76,12 +76,19 @@ What's the proportion of "significant" results ($p < .05$) that you see?
 First do this using a `for` loop.
 
 ```{r}
-
+mean(rnorm(30))
 ```
 
 Next, do this using the `replicate` function:
 
 ```{r}
+n = 10000
+pvals <- as.data.frame(replicate(n,t.test(rnorm(30))$p.value))
+sig <- pvals %>% 
+  filter(pvals < 0.05)
+sig
+count(sig)/n
+#mean(repli)
 ```
 
 How does this compare to the intended false-positive rate of $\alpha=0.05$?
