@@ -445,8 +445,8 @@ for (var in 1:n) {
 
 pvals.df &lt;- as.data.frame(pvals)
 count(filter(pvals.df, pvals &lt; 0.05)) / n</code></pre>
-<pre><code>##      n
-## 1 0.05</code></pre>
+<pre><code>##       n
+## 1 0.055</code></pre>
 <p>Next, do this using the <code>replicate</code> function:</p>
 <pre class="r"><code>n = 10000
 pvals_repl &lt;- as.data.frame(replicate(n,t.test(rnorm(30))$p.value))
@@ -454,7 +454,7 @@ sig &lt;- pvals_repl %&gt;%
   filter(pvals_repl &lt; 0.05)
 count(sig)/n</code></pre>
 <pre><code>##        n
-## 1 0.0576</code></pre>
+## 1 0.0536</code></pre>
 <p>How does this compare to the intended false-positive rate of <span class="math inline">\(\alpha=0.05\)</span>?</p>
 <blockquote>
 <p>The simulations show roughly a similar p ~ .05 false positive rate using the generated data.</p>
@@ -464,11 +464,31 @@ count(sig)/n</code></pre>
 <p>First, write a function that implements this sampling regime.</p>
 <pre class="r"><code>double.sample &lt;- function (x)
   if (x &gt; 0.05 &amp;&amp; x &lt; 0.25)
- return(print(x)) </code></pre>
+    return(t.test(rnorm(30))$p.value)</code></pre>
 <p>Now call this function 10k times and find out what happens.</p>
+<pre class="r"><code>n = 10000
+resampled &lt;- vector() #double.sampled pvals will go here
+raw_pvals &lt;- replicate(n,t.test(rnorm(30))$p.value) #this holds the original, 10k t-tests
+
+for (var in 1:n) {
+  x &lt;- double.sample(raw_pvals[var]) #run double.sample on each pval
+  resampled &lt;- append(resampled,(x)) #create list of resampled data
+
+}
+
+sig &lt;- data.frame(raw_pvals) %&gt;% #find how many significant in the raw
+  filter(raw_pvals &lt; 0.05)
+
+sig_resampled &lt;- data.frame(resampled) %&gt;% #find how many significant in the resampled set
+  filter(resampled &lt; 0.05)
+
+total &lt;- count(sig)+count(sig_resampled) #total em up &amp; divide by n
+total/n</code></pre>
+<pre><code>##        n
+## 1 0.0609</code></pre>
 <p>Is there an inflation of false positives? How bad is it?</p>
 <blockquote>
-<p>ANSWER</p>
+<p>There is a slight inflation (about 0.01 increase).</p>
 </blockquote>
 <p>Now modify this code so that you can investigate this “double the sample” rule in a bit more depth. In the previous question, the researcher doubles the sample only when they think they got “close” to a significant result, i.e. when their not-significant p is less than 0.25. What if the researcher was more optimistic? See what happens in these 3 other scenarios:</p>
 <ul>

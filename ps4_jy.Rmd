@@ -108,21 +108,71 @@ Consider this scenario: you have done an experiment, again with 30 participants 
 
 First, write a function that implements this sampling regime.
 
+
+```{r}
+func <- function (x)
+  ifelse (pval > 0.05 && pval <x,(t.test(rnorm(30))$p.value),pval)
+    #(t.test(rnorm(30))$p.value)
+ 
+ #if (pval < 0.05) print(pval)
+ # if (pval > x) print(pval)
+   
+```
+Now call this function 10k times and find out what happens. 
+```{r}
+n = 100
+x = 0.25
+resampled <- vector()
+
+for (trial in 1:n) {
+  
+  pval <- t.test(rnorm(30))$p.value
+  pval <- double.sample(x) #run double.sample on each pval
+  resampled <- append(resampled,(pval)) #create list of resampled data
+  
+}
+resampled
+#resampled <- data.frame(resampled) %>% #find how many significant in the resampled set
+ # filter(resampled < 0.05)
+
+#count(resampled) /n #total em up & divide by n
+
+
+```
+
+
 ```{r}
 double.sample <- function (x)
   if (x > 0.05 && x < 0.25)
- return(print(x)) 
-  
+    return(t.test(rnorm(30))$p.value)
 ```
 
 Now call this function 10k times and find out what happens. 
 
 ```{r}
+n = 10000
+resampled <- vector() #double.sampled pvals will go here
+raw_pvals <- replicate(n,t.test(rnorm(30))$p.value) #this holds the original, 10k t-tests
+
+for (var in 1:n) {
+  x <- double.sample(raw_pvals[var]) #run double.sample on each pval
+  resampled <- append(resampled,(x)) #create list of resampled data
+
+}
+
+sig <- data.frame(raw_pvals) %>% #find how many significant in the raw
+  filter(raw_pvals < 0.05)
+
+sig_resampled <- data.frame(resampled) %>% #find how many significant in the resampled set
+  filter(resampled < 0.05)
+
+total <- count(sig)+count(sig_resampled) #total em up & divide by n
+total/n
 ```
 
 Is there an inflation of false positives? How bad is it?
 
-> ANSWER
+> There is a slight inflation (about 0.01 increase).
 
 Now modify this code so that you can investigate this "double the sample" rule in a bit more depth. In the previous question, the researcher doubles the sample only when they think they got "close" to a significant result, i.e. when their not-significant p is less than 0.25. What if the researcher was more optimistic? See what happens in these 3 other scenarios:
 
@@ -137,6 +187,8 @@ HINT: Try to do this by making the function `double.sample` take the upper p val
 HINT 2: You may need more samples. Find out by looking at how the results change from run to run.
 
 ```{r}
+
+
 ```
 
 What do you conclude on the basis of this simulation? How bad is this kind of data-dependent policy?
