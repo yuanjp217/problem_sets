@@ -79,19 +79,13 @@ First do this using a `for` loop.
 n = 10000
 pvals <- vector()
 
-#rm(output)
-#n = 1000
 for (var in 1:n) {
-  #print(var)
     output <- t.test((rnorm(30)))
     pvals <- append(pvals,output$p.value)
-    #pvals_for <- as.data.frame(append(pvals_for,output$p.value))
-  }
+    }
 
 pvals.df <- as.data.frame(pvals)
 count(filter(pvals.df, pvals < 0.05)) / n
-
-
 ```
 
 Next, do this using the `replicate` function:
@@ -101,14 +95,12 @@ n = 10000
 pvals_repl <- as.data.frame(replicate(n,t.test(rnorm(30))$p.value))
 sig <- pvals_repl %>% 
   filter(pvals_repl < 0.05)
-sig
 count(sig)/n
-#mean(repli)
 ```
 
 How does this compare to the intended false-positive rate of $\alpha=0.05$?
 
-> About 5% of the samples show up as significant results. 
+> The simulations show roughly a similar p ~ .05 false positive rate using the generated data.
 
 Ok, that was a bit boring. Let's try something more interesting - let's implement a p-value sniffing simulation, in the style of Simons, Nelson, & Simonsohn (2011).
 
@@ -117,15 +109,10 @@ Consider this scenario: you have done an experiment, again with 30 participants 
 First, write a function that implements this sampling regime.
 
 ```{r}
-double.sample <- function (tests) {
+double.sample <- function (x)
+  if (x > 0.05 && x < 0.25)
+ return(print(x)) 
   
-#testOutputs <- (replicate(tests,t.test(rnorm(30))))
-
-test <- t.test(rnorm(30)) 
-pval <- test$p.val
-print(pval)
-  
-}
 ```
 
 Now call this function 10k times and find out what happens. 
