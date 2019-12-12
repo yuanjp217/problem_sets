@@ -76,31 +76,29 @@ What's the proportion of "significant" results ($p < .05$) that you see?
 First do this using a `for` loop.
 
 ```{r}
-n = 10000
-pvals <- vector()
+pValues <- 0
+for (i in 1:1000){
+  randDist = rnorm(30, mean=0, sd=1)
+  t_result = t.test(randDist)
+  pValues[i] <- t_result$p.value
+  
+}
 
-for (var in 1:n) {
-    output <- t.test((rnorm(30)))
-    pvals <- append(pvals,output$p.value)
-    }
-
-pvals.df <- as.data.frame(pvals)
-count(filter(pvals.df, pvals < 0.05)) / n
+significant_proportion = sum(pValues<.05)/length(pValues)
+significant_proportion
 ```
 
 Next, do this using the `replicate` function:
 
 ```{r}
-n = 10000
-pvals_repl <- as.data.frame(replicate(n,t.test(rnorm(30))$p.value))
-sig <- pvals_repl %>% 
-  filter(pvals_repl < 0.05)
-count(sig)/n
+sim_pvalue <- replicate(1000, t.test(rnorm(30, mean=0, sd=1))$p.value)
+sim_pvalue_proportion = sum(sim_pvalue<.05)/length(sim_pvalue)
+sim_pvalue_proportion
 ```
 
 How does this compare to the intended false-positive rate of $\alpha=0.05$?
 
-> The simulations show roughly a similar p ~ .05 false positive rate using the generated data.
+> The simulations show a similar p = .05 false positive rate.
 
 Ok, that was a bit boring. Let's try something more interesting - let's implement a p-value sniffing simulation, in the style of Simons, Nelson, & Simonsohn (2011).
 
@@ -110,69 +108,37 @@ First, write a function that implements this sampling regime.
 
 
 ```{r}
-func <- function (x)
-  ifelse (pval > 0.05 && pval <x,(t.test(rnorm(30))$p.value),pval)
-    #(t.test(rnorm(30))$p.value)
- 
- #if (pval < 0.05) print(pval)
- # if (pval > x) print(pval)
+double.sample <- function () {
+  firstSet = rnorm(30, mean=0, sd=1)
+  secondSet = rnorm(30, mean=0, sd=1)
+  firstAttempt = t.test(firstSet)$p.value
+
+   if  (between(firstAttempt, .05, .25)) {
+    doubleList = c(firstSet,secondSet)
+    result = t.test(doubleList)$p.value
+  } 
+  else if ( firstAttempt < .05 ) {
+    result = firstAttempt
+  } 
+  
+  else if ( firstAttempt > .25) {
+    result = firstAttempt
+  }
+  return(result)
+}
    
 ```
 Now call this function 10k times and find out what happens. 
-```{r}
-n = 100
-x = 0.25
-resampled <- vector()
-
-for (trial in 1:n) {
-  
-  pval <- t.test(rnorm(30))$p.value
-  pval <- double.sample(x) #run double.sample on each pval
-  resampled <- append(resampled,(pval)) #create list of resampled data
-  
-}
-resampled
-#resampled <- data.frame(resampled) %>% #find how many significant in the resampled set
- # filter(resampled < 0.05)
-
-#count(resampled) /n #total em up & divide by n
-
-
-```
-
 
 ```{r}
-double.sample <- function (x)
-  if (x > 0.05 && x < 0.25)
-    return(t.test(rnorm(30))$p.value)
-```
-
-Now call this function 10k times and find out what happens. 
-
-```{r}
-n = 10000
-resampled <- vector() #double.sampled pvals will go here
-raw_pvals <- replicate(n,t.test(rnorm(30))$p.value) #this holds the original, 10k t-tests
-
-for (var in 1:n) {
-  x <- double.sample(raw_pvals[var]) #run double.sample on each pval
-  resampled <- append(resampled,(x)) #create list of resampled data
-
-}
-
-sig <- data.frame(raw_pvals) %>% #find how many significant in the raw
-  filter(raw_pvals < 0.05)
-
-sig_resampled <- data.frame(resampled) %>% #find how many significant in the resampled set
-  filter(resampled < 0.05)
-
-total <- count(sig)+count(sig_resampled) #total em up & divide by n
-total/n
+tenk_sim <- replicate(10000, double.sample());
+sniffing_pvalue_proportion = sum(tenk_sim<.05)/length(tenk_sim)
+sniffing_pvalue_proportion
 ```
 
 Is there an inflation of false positives? How bad is it?
 
-> There is a slight inflation (about 0.01 increase).
+> There is a slight inflation (about 0.1 increase) in the false positive rate.
 
 Now modify this code so that you can investigate this "double the sample" rule in a bit more depth. In the previous question, the researcher doubles the sample only when they think they got "close" to a significant result, i.e. when their not-significant p is less than 0.25. What if the researcher was more optimistic? See what happens in these 3 other scenarios:
 
@@ -187,10 +153,76 @@ HINT: Try to do this by making the function `double.sample` take the upper p val
 HINT 2: You may need more samples. Find out by looking at how the results change from run to run.
 
 ```{r}
+sampleN=1000
+double.sample1 <- function (sampleN) {
+  firstSet = rnorm(sampleN, mean=0, sd=1)
+  secondSet = rnorm(sampleN, mean=0, sd=1)
+  firstAttempt = t.test(firstSet)$p.value
+  
+  if ( firstAttempt > .05 ) {
+    doubleList = c(firstSet,secondSet)
+    result = t.test(doubleList)$p.value
+  } 
+  
+  else if ( firstAttempt < .5) {
+    result = firstAttempt
+  }
+  return(result)
+}
 
+double.sample2 <- function (sampleN) {
+  firstSet = rnorm(sampleN, mean=0, sd=1)
+  secondSet = rnorm(sampleN, mean=0, sd=1)
+  firstAttempt = t.test(firstSet)$p.value
+  
+  if ( firstAttempt > .05 ) {
+    doubleList = c(firstSet,secondSet)
+    result = t.test(doubleList)$p.value
+  } 
+  
+  else if ( firstAttempt < .75) {
+    result = firstAttempt
+  }
+  return(result)
+}
 
+double.sample3 <- function (sampleN) {
+  firstSet = rnorm(sampleN, mean=0, sd=1)
+  secondSet = rnorm(sampleN, mean=0, sd=1)
+  firstAttempt = t.test(firstSet)$p.value
+  
+  if ( firstAttempt > .05 ) {
+    doubleList = c(firstSet,secondSet)
+    result = t.test(doubleList)$p.value
+  } 
+  
+  else if ( firstAttempt < .05) {
+    result = firstAttempt
+    #sampleN = sampleN * 2
+  }
+  return(result)
+}
 ```
+
+```{r simulation 1}
+tenk_sim1 <- replicate(10000, double.sample1(sampleN));
+tenk_pvalue_proportion1 = sum(tenk_sim1<.05)/length(tenk_sim1)
+tenk_pvalue_proportion1
+```
+
+```{r simulation 2}
+tenk_sim2 <- replicate(10000, double.sample2(sampleN));
+tenk_pvalue_proportion2 = sum(tenk_sim2<.05)/length(tenk_sim2)
+tenk_pvalue_proportion2
+```
+
+```{r simulation 3}
+tenk_sim3 <- replicate(10000, double.sample3(sampleN));
+tenk_pvalue_proportion3 = sum(tenk_sim3<.05)/length(tenk_sim3)
+tenk_pvalue_proportion3
+```
+
 
 What do you conclude on the basis of this simulation? How bad is this kind of data-dependent policy?
 
-> ANSWER
+> There is a false positive rate inflation as the p-value threshold rises from 0.5 to 0.75 (to roughly 0.08). Doubling the sample size also increased the rate to about 0.08.
